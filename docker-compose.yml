@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: temporal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - reforge-network
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_SEEDS: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PWD: postgres
+      DEFAULT_NAMESPACE: default
+      LOG_LEVEL: warn
+    ports:
+      - "7233:7233"
+    networks:
+      - reforge-network
+
+  temporal-ui:
+    image: temporalio/ui:2.26.2
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8080:8080"
+    networks:
+      - reforge-network
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - reforge-network
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} &&
+        mc mb local/fraud-detection --ignore-existing &&
+        mc anonymous set none local/fraud-detection &&
+        printf 'keep' | mc pipe local/fraud-detection/raw-transactions/.keep &&
+        printf 'keep' | mc pipe local/fraud-detection/training-data/.keep &&
+        printf 'keep' | mc pipe local/fraud-detection/models/active/.keep &&
+        printf 'keep' | mc pipe local/fraud-detection/models/archive/.keep &&
+        printf 'keep' | mc pipe local/fraud-detection/reports/drift/.keep &&
+        echo 'MinIO bucket and folder structure ready.' &&
+        exit 0
+      "
+    networks:
+      - reforge-network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  reforge-network:
+    driver: bridge
