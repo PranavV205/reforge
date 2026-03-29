@@ -100,6 +100,11 @@ services:
       MINIO_BUCKET: fraud-detection
       TEMPORAL_HOST: temporal:7233
       TEMPORAL_TASK_QUEUE: ml-tasks
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       minio:
         condition: service_healthy
