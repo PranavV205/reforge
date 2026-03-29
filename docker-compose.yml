@@ -88,6 +88,23 @@ services:
     networks:
       - reforge-network
 
+  nestjs-api:
+    build: ./nestjs-api
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reforge
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - reforge-network
+
 volumes:
   postgres_data:
   minio_data:
