@@ -124,8 +124,15 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: reforge
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       postgres:
+        condition: service_healthy
+      python-ml:
         condition: service_healthy
     networks:
       - reforge-network
@@ -135,7 +142,8 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - nestjs-api
+      nestjs-api:
+        condition: service_healthy
     networks:
       - reforge-network
 
