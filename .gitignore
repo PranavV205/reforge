@@ -4,3 +4,7 @@
 # NestJS
 nestjs-api/node_modules/
 nestjs-api/dist/
+
+# Python
+**/__pycache__/
+*.pyc

@@ -88,6 +88,26 @@ services:
     networks:
       - reforge-network
 
+  python-ml:
+    build: ./python-ml
+    ports:
+      - "8000:8000"
+    environment:
+      MINIO_HOST: minio
+      MINIO_PORT: "9000"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: fraud-detection
+      TEMPORAL_HOST: temporal:7233
+      TEMPORAL_TASK_QUEUE: ml-tasks
+    depends_on:
+      minio:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+    networks:
+      - reforge-network
+
   nestjs-api:
     build: ./nestjs-api
     ports:
