@@ -130,6 +130,15 @@ services:
     networks:
       - reforge-network
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - nestjs-api
+    networks:
+      - reforge-network
+
 volumes:
   postgres_data:
   minio_data:
