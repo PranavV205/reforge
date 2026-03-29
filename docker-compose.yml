@@ -93,6 +93,7 @@ services:
     ports:
       - "3001:3001"
     environment:
+      PORT: 3001
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
