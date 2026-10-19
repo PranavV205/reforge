@@ -8,6 +8,8 @@ nestjs-api/dist/
 # Python
 **/__pycache__/
 *.pyc
+python-ml/data/
+python-ml/venv/
 
 # Frontend
 frontend/node_modules/
