@@ -1,8 +1,12 @@
+import sys
+from datetime import datetime, timezone
+
 import joblib
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import f1_score, precision_score, recall_score
 
+import storage
 from preprocessing import preprocess
 
 CONTAMINATION = 0.0013  # roughly the fraud rate in PaySim (0.129%)
@@ -58,3 +62,22 @@ if __name__ == "__main__":
     print(f"Recall:    {metrics['recall']:.3f}")
     print(f"F1:        {metrics['f1']:.3f}")
     print(f"\nModel saved to {MODEL_PATH}")
+
+    if "--upload" in sys.argv:
+        client = storage.get_client()
+        version = storage.next_version(client)
+        storage.save_model(model, version, client)
+        storage.activate_model(version, client)
+        versions = [{**v, "status": "archived"} for v in storage.load_versions(client)]
+        versions.append({
+            "version": version,
+            "trained_at": datetime.now(timezone.utc).isoformat(),
+            "f1_score": metrics["f1"],
+            "precision": metrics["precision"],
+            "recall": metrics["recall"],
+            "training_set_size": len(X_train),
+            "drift_trigger": False,
+            "status": "active",
+        })
+        storage.save_versions(versions, client)
+        print(f"Uploaded {version} to MinIO and set it active")
