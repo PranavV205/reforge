@@ -10,6 +10,7 @@ nestjs-api/dist/
 *.pyc
 python-ml/data/
 python-ml/venv/
+python-ml/*.pkl
 
 # Frontend
 frontend/node_modules/
