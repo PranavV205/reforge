@@ -1,1 +1,1 @@
-+ CREATE DATABASE reforge;
+CREATE DATABASE reforge;
